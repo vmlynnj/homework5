@@ -15,6 +15,53 @@ public class Kmer {
 
 	
 
+	
+	
+	public static class MyMapper extends
+	Mapper<Object, Text, Text, IntWritable> {
+
+		private final static IntWritable one = new IntWritable(1);
+		private Text kmer = new Text();
+		
+		public void map(Object key, Text value, Context context)
+				throws IOException, InterruptedException {
+		
+			int k = context.getConfiguration().getInt("k");
+			String line = value.toString();
+			if (!line.startsWith(">")) {
+				for (int i = 0; i < line.length(); i++) {
+					if(i+k > line.length()) {
+						String current = "";
+						for(int j=0; j<k; j++) {
+							current += line.charAt(j+i);
+						}
+						kmer.set(String.valueOf(current));
+						context.write(kmer, one);
+					}
+				}
+			}
+		}
+		
+		private void readTwoLines() {
+		
+		}
+	}
+	
+	public static class MyReducer extends
+		Reducer<Text, IntWritable, Text, IntWritable> {
+		private IntWritable result = new IntWritable();
+		public void reduce(Text key, Iterable<IntWritable> values,
+				Context context) throws IOException, InterruptedException {
+			int sum = 0;
+			for (IntWritable val : values) {
+				sum += val.get();
+			}
+			result.set(sum);
+			context.write(key, result);
+		}
+	}
+
+	
 	public static void main(String[] args) throws Exception {
 
 		if (args.length != 3) {
